@@ -31,6 +31,11 @@ class Dashboard {
         this.setupControls();
         this.setupTheme();
         this.setupConfig();
+        // Load demo mode immediately, refresh will try APIs if configured
+        if (!this.config.netdataUrl && !this.config.truenasUrl) {
+            this.generateDemoData();
+            this.data.mode = 'demo';
+        }
         this.detectServices();
         this.startRefresh();
         this.refresh();

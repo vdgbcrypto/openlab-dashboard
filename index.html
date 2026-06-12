@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLab Dashboard</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="logo">
+                    <span class="logo-icon">&#9679;</span>
+                    <h1>OpenLab Dashboard</h1>
+                </div>
+            </div>
+            <div class="header-controls">
+                <span class="connection-status" id="connectionStatus">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Connecting...</span>
+                </span>
+                <span class="last-updated" id="lastUpdated">--</span>
+                <button id="themeToggle" class="btn btn-icon" title="Toggle theme" aria-label="Toggle light/dark theme">
+                    <span class="icon-sun">&#9728;</span>
+                    <span class="icon-moon">&#9790;</span>
+                </button>
+                <button id="refreshBtn" class="btn btn-icon" title="Refresh now" aria-label="Refresh data">
+                    &#8635;
+                </button>
+                <button id="configBtn" class="btn btn-secondary">&#9881; Config</button>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <!-- Sidebar Navigation -->
+            <nav class="sidebar" id="sidebar">
+                <ul class="nav-list">
+                    <li class="nav-item active" data-section="overview">
+                        <span class="nav-icon">&#9673;</span> Overview
+                    </li>
+                    <li class="nav-item" data-section="resources">
+                        <span class="nav-icon">&#9681;</span> Resources
+                    </li>
+                    <li class="nav-item" data-section="storage">
+                        <span class="nav-icon">&#128190;</span> Storage
+                    </li>
+                    <li class="nav-item" data-section="network">
+                        <span class="nav-icon">&#127760;</span> Network
+                    </li>
+                    <li class="nav-item" data-section="vms">
+                        <span class="nav-icon">&#128421;</span> VMs
+                    </li>
+                    <li class="nav-item" data-section="containers">
+                        <span class="nav-icon">&#128230;</span> Containers
+                    </li>
+                    <li class="nav-item" data-section="apps">
+                        <span class="nav-icon">&#128640;</span> Apps
+                    </li>
+                    <li class="nav-item" data-section="services">
+                        <span class="nav-icon">&#9881;</span> Services
+                    </li>
+                </ul>
+                <div class="sidebar-footer">
+                    <div class="refresh-interval">
+                        <label for="refreshIntervalSelect">Refresh:</label>
+                        <select id="refreshIntervalSelect">
+                            <option value="5" selected>5s</option>
+                            <option value="10">10s</option>
+                            <option value="30">30s</option>
+                            <option value="60">60s</option>
+                            <option value="0">Off</option>
+                        </select>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="dashboard" id="dashboardContent">
+
+                <!-- Overview Section -->
+                <section class="section" id="section-overview">
+                    <div class="section-cards">
+                        <div class="stat-card" id="statSystem">
+                            <div class="stat-header">System</div>
+                            <div class="stat-body">
+                                <div class="stat-row"><span class="stat-label">Hostname</span><span class="stat-value" id="sysHostname">--</span></div>
+                                <div class="stat-row"><span class="stat-label">Version</span><span class="stat-value" id="sysVersion">--</span></div>
+                                <div class="stat-row"><span class="stat-label">Uptime</span><span class="stat-value" id="sysUptime">--</span></div>
+                                <div class="stat-row"><span class="stat-label">Load</span><span class="stat-value" id="sysLoad">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card" id="statCpu">
+                            <div class="stat-header">CPU</div>
+                            <div class="stat-body">
+                                <div class="big-stat">
+                                    <span class="big-stat-value" id="cpuPercent">0%</span>
+                                    <span class="big-stat-label">Utilization</span>
+                                </div>
+                                <div class="mini-chart"><canvas id="cpuChart" height="60"></canvas></div>
+                                <div class="stat-row"><span class="stat-label">Cores</span><span class="stat-value" id="cpuCores">--</span></div>
+                                <div class="stat-row"><span class="stat-label">Temp</span><span class="stat-value" id="cpuTemp">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card" id="statMemory">
+                            <div class="stat-header">Memory</div>
+                            <div class="stat-body">
+                                <div class="big-stat">
+                                    <span class="big-stat-value" id="memPercent">0%</span>
+                                    <span class="big-stat-label">Used</span>
+                                </div>
+                                <div class="mini-chart"><canvas id="memChart" height="60"></canvas></div>
+                                <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="memUsed">--</span></div>
+                                <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="memTotal">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card" id="statDisk">
+                            <div class="stat-header">Disk</div>
+                            <div class="stat-body">
+                                <div class="big-stat">
+                                    <span class="big-stat-value" id="diskPercent">0%</span>
+                                    <span class="big-stat-label">Used</span>
+                                </div>
+                                <div class="mini-chart"><canvas id="diskChart" height="60"></canvas></div>
+                                <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="diskUsed">--</span></div>
+                                <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="diskTotal">--</span></div>
+                            </div>
+                        </div>
+
+                        <div class="stat-card wide" id="statNetwork">
+                            <div class="stat-header">Network Traffic</div>
+                            <div class="stat-body">
+                                <div class="network-stats">
+                                    <div class="net-stat">
+                                        <span class="net-arrow">&#8595;</span>
+                                        <span class="net-value" id="netRx">--</span>
+                                        <span class="net-label">RX</span>
+                                    </div>
+                                    <div class="net-stat">
+                                        <span class="net-arrow">&#8593;</span>
+                                        <span class="net-value" id="netTx">--</span>
+                                        <span class="net-label">TX</span>
+                                    </div>
+                                </div>
+                                <div class="mini-chart wide"><canvas id="netChart" height="60"></canvas></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Resources Detail Section -->
+                <section class="section hidden" id="section-resources">
+                    <h2 class="section-title">Resource Details</h2>
+                    <div class="resource-detail">
+                        <div class="detail-panel">
+                            <h3>CPU History (last 60s)</h3>
+                            <canvas id="cpuHistoryChart" height="150"></canvas>
+                            <div class="cpu-info" id="cpuInfo"></div>
+                        </div>
+                        <div class="detail-panel">
+                            <h3>Memory History (last 60s)</h3>
+                            <canvas id="memHistoryChart" height="150"></canvas>
+                            <div class="mem-info" id="memInfo"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Storage Section -->
+                <section class="section hidden" id="section-storage">
+                    <h2 class="section-title">Storage Pools</h2>
+                    <div class="storage-grid" id="storageGrid"></div>
+                </section>
+
+                <!-- Network Section -->
+                <section class="section hidden" id="section-network">
+                    <h2 class="section-title">Network</h2>
+                    <div class="network-detail" id="networkDetail">
+                        <div class="detail-panel">
+                            <h3>Traffic History (last 60s)</h3>
+                            <canvas id="netHistoryChart" height="150"></canvas>
+                        </div>
+                        <div class="detail-panel">
+                            <h3>Interface Statistics</h3>
+                            <div class="interface-list" id="interfaceList"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VMs Section -->
+                <section class="section hidden" id="section-vms">
+                    <h2 class="section-title">Virtual Machines <span class="count-badge" id="vmCount">0</span></h2>
+                    <div class="list-container" id="vmList"></div>
+                </section>
+
+                <!-- Containers Section -->
+                <section class="section hidden" id="section-containers">
+                    <h2 class="section-title">Containers <span class="count-badge" id="containerCount">0</span></h2>
+                    <div class="list-container" id="containerList"></div>
+                </section>
+
+                <!-- Apps Section -->
+                <section class="section hidden" id="section-apps">
+                    <h2 class="section-title">Applications <span class="count-badge" id="appCount">0</span></h2>
+                    <div class="list-container" id="appList"></div>
+                </section>
+
+                <!-- Services Section -->
+                <section class="section hidden" id="section-services">
+                    <h2 class="section-title">System Services <span class="count-badge" id="serviceCount">0</span></h2>
+                    <div class="list-container" id="serviceList"></div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Config Modal -->
+        <div id="configModal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Configuration</h2>
+                    <button class="close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="config-section">
+                        <h3>API Connections</h3>
+                        <form id="configForm">
+                            <div class="form-group">
+                                <label for="netdataUrl">Netdata URL</label>
+                                <input type="url" id="netdataUrl" placeholder="http://localhost:19999">
+                            </div>
+                            <div class="form-group">
+                                <label for="ntopngUrl">ntopng URL (optional)</label>
+                                <input type="url" id="ntopngUrl" placeholder="http://localhost:3000">
+                            </div>
+                            <div class="form-group">
+                                <label for="truenasUrl">TrueNAS URL (optional)</label>
+                                <input type="url" id="truenasUrl" placeholder="https://truenas.local">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="truenasUser">Username</label>
+                                    <input type="text" id="truenasUser" placeholder="root">
+                                </div>
+                                <div class="form-group">
+                                    <label for="truenasPass">API Key</label>
+                                    <input type="password" id="truenasPass" placeholder="API Key">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="config-section">
+                        <h3>Detected Services</h3>
+                        <div class="detection-results" id="detectionResults">
+                            <div class="detect-item"><span class="detect-label">Netdata:</span><span class="detect-status" id="detectNetdata">Checking...</span></div>
+                            <div class="detect-item"><span class="detect-label">ntopng:</span><span class="detect-status" id="detectNtopng">Checking...</span></div>
+                            <div class="detect-item"><span class="detect-label">TrueNAS:</span><span class="detect-status" id="detectTruenas">Checking...</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="saveConfigBtn" class="btn btn-primary">Save &amp; Connect</button>
+                    <button id="closeConfigBtn" class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail Modal -->
+        <div id="detailModal" class="modal" style="display: none;">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h2 id="detailTitle">Details</h2>
+                    <button class="close-btn" aria-label="Close">&times;</button>
+                </div>
+                <div class="modal-body" id="detailBody">
+                    <p class="loading">Loading...</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="closeDetailBtn" class="btn btn-secondary">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

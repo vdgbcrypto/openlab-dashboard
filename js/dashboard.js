@@ -371,60 +371,107 @@ class Dashboard {
     // ---- Demo Data (when no APIs configured) ----
     generateDemoData() {
         const t = Date.now();
-        const seed = Math.sin(t / 10000);
+        const jitter = (base, range) => Math.round(base + (Math.random() - 0.5) * range);
 
-        const cpuBase = 25 + seed * 20;
-        const cpuPercent = Math.max(5, Math.min(95, cpuBase + (Math.random() * 10 - 5)));
-        this.data.cpu.percent = Math.round(cpuPercent);
-        this.data.cpu.cores = 8;
-        this.data.cpu.temp = Math.round(45 + seed * 10 + Math.random() * 5);
-        this.data.cpu.history = [...this.data.cpu.history, this.data.cpu.percent].slice(-this.historyMax);
+        // Realistic CPU: 8-65% with natural fluctuation
+        const cpuPercent = jitter(34, 20);
+        this.data.cpu.percent = Math.max(8, Math.min(65, cpuPercent));
+        this.data.cpu.cores = 16;
+        this.data.cpu.temp = jitter(43, 8);
+        this.data.cpu.history = this._genHistory(this.data.cpu.percent, 60, 8, 65);
 
-        const memUsed = 14 + seed * 6 + Math.random() * 2;
+        // Realistic memory: 25-75% of 32GB
+        const memPct = jitter(48, 18);
         this.data.memory.total = 32 * 1024 * 1024 * 1024;
-        this.data.memory.used = Math.round(memUsed * 1024 * 1024 * 1024);
-        this.data.memory.percent = Math.round((memUsed / 32) * 100);
-        this.data.memory.history = [...this.data.memory.history, this.data.memory.percent].slice(-this.historyMax);
+        this.data.memory.used = Math.round(this.data.memory.total * Math.max(25, Math.min(75, memPct)) / 100);
+        this.data.memory.percent = Math.round((this.data.memory.used / this.data.memory.total) * 100);
+        this.data.memory.history = this._genHistory(this.data.memory.percent, 60, 25, 75);
 
-        const diskPct = 58 + Math.random() * 4;
-        this.data.disk.total = 256 * 1024 * 1024 * 1024;
-        this.data.disk.used = Math.round(this.data.disk.total * diskPct / 100);
-        this.data.disk.percent = Math.round(diskPct);
-        this.data.disk.history = [...(this.data.disk.history || []), this.data.disk.percent].slice(-this.historyMax);
+        // Realistic disk: 45-80% of 887GB (ZFS pool)
+        const diskPct = jitter(62, 12);
+        this.data.disk.total = 887 * 1024 * 1024 * 1024;
+        this.data.disk.used = Math.round(this.data.disk.total * Math.max(45, Math.min(80, diskPct)) / 100);
+        this.data.disk.percent = Math.round((this.data.disk.used / this.data.disk.total) * 100);
+        this.data.disk.history = this._genHistory(this.data.disk.percent, 60, 45, 80);
 
-        const rx = (10 + Math.abs(seed) * 30 + Math.random() * 5) * 1000 * 1024 / 8;
-        const tx = (2 + Math.abs(seed) * 15 + Math.random() * 3) * 1000 * 1024 / 8;
-        this.data.network.rx = Math.round(rx);
-        this.data.network.tx = Math.round(tx);
-        this.data.network.rxHistory = [...this.data.network.rxHistory, this.data.network.rx].slice(-this.historyMax);
-        this.data.network.txHistory = [...this.data.network.txHistory, this.data.network.tx].slice(-this.historyMax);
+        // Realistic network: variable RX/TX in MB/s
+        const rxMB = (Math.random() * 25 + 2).toFixed(1);
+        const txMB = (Math.random() * 12 + 0.5).toFixed(1);
+        this.data.network.rx = Math.round(parseFloat(rxMB) * 1024 * 1024);
+        this.data.network.tx = Math.round(parseFloat(txMB) * 1024 * 1024);
+        this.data.network.rxHistory = this._genHistory(parseFloat(rxMB), 60, 1, 30);
+        this.data.network.txHistory = this._genHistory(parseFloat(txMB), 60, 0.2, 15);
 
-        this.data.system.hostname = 'openlab-demo';
-        this.data.system.version = 'Demo Mode';
-        this.data.system.uptime = '8 days, 12:00:00';
-        this.data.system.load = '0.96 1.29 2.73';
+        // System info
+        this.data.system.hostname = 'truenas-scale';
+        this.data.system.version = 'TrueNAS SCALE 24.10.2';
+        this.data.system.uptime = this.formatUptime(t / 1000 - 7 * 86400);
+        this.data.system.load = (0.5 + Math.random() * 1.5).toFixed(2) + ' ' +
+                                (0.8 + Math.random() * 1.2).toFixed(2) + ' ' +
+                                (1.0 + Math.random() * 2.0).toFixed(2);
 
+        // Storage pools (realistic ZFS)
+        const pool1Used = jitter(580, 80);
+        const pool1Total = 887;
         this.data.storage = [
-            { name: 'tank', type: 'RAID-Z2', used: 12.3 * 1e12, total: 24.0 * 1e12, available: 11.7 * 1e12 },
-            { name: 'backup', type: 'Mirror', used: 4.5 * 1e12, total: 8.0 * 1e12, available: 3.5 * 1e12 }
+            {
+                name: 'tank',
+                type: 'RAID-Z2',
+                used: pool1Used * 1024 * 1024 * 1024,
+                total: pool1Total * 1024 * 1024 * 1024,
+                available: (pool1Total - pool1Used) * 1024 * 1024 * 1024
+            },
+            {
+                name: 'backup',
+                type: 'Mirror',
+                used: jitter(180, 40) * 1024 * 1024 * 1024,
+                total: 400 * 1024 * 1024 * 1024,
+                available: jitter(200, 40) * 1024 * 1024 * 1024
+            }
         ];
 
+        // VMs (realistic mix)
         this.data.vms = [
-            { id: 1, name: 'docker-host', state: 'running', memory: 8589934592, vcpus: 8, autostart: true },
-            { id: 2, name: 'dev-test', state: 'stopped', memory: 2147483648, vcpus: 2, autostart: false }
+            { id: 1, name: 'docker-host', state: 'running', memory: 7.2 * 1024 * 1024 * 1024, vcpus: 16, autostart: true },
+            { id: 2, name: 'win-server-2022', state: 'running', memory: 4 * 1024 * 1024 * 1024, vcpus: 4, autostart: true },
+            { id: 3, name: 'dev-test', state: 'stopped', memory: 2 * 1024 * 1024 * 1024, vcpus: 2, autostart: false }
         ];
 
+        // Containers (realistic homelab services)
         this.data.containers = [
-            { Id: 'abc123', Names: ['/netdata'], Image: 'netdata/netdata:latest', State: 'running', Status: 'Up 5 days', Ports: [{PublicPort: 19999, PrivatePort: 19999}] },
-            { Id: 'def456', Names: ['/portainer'], Image: 'portainer/portainer-ce:latest', State: 'running', Status: 'Up 5 days', Ports: [{PublicPort: 9443, PrivatePort: 9443}] }
+            { Id: 'a1b2c3', Names: ['/netdata'], Image: 'netdata/netdata:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 19999, PrivatePort: 19999}] },
+            { Id: 'd4e5f6', Names: ['/portainer'], Image: 'portainer/portainer-ce:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 9443, PrivatePort: 9443}] },
+            { Id: 'g7h8i9', Names: ['/adguard'], Image: 'adguard/adguardhome:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 3000, PrivatePort: 3000}] },
+            { Id: 'j0k1l2', Names: ['/vaultwarden'], Image: 'vaultwarden/server:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 8080, PrivatePort: 80}] },
+            { Id: 'm3n4o5', Names: ['/syncthing'], Image: 'lscr.io/linuxserver/syncthing:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 8384, PrivatePort: 8384}] },
+            { Id: 'p6q7r8', Names: ['/jellyfin'], Image: 'jellyfin/jellyfin:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 8096, PrivatePort: 8096}] },
+            { Id: 's9t0u1', Names: ['/ntopng'], Image: 'ntop/ntopng:latest', State: 'running', Status: 'Up 12 days', Ports: [{PublicPort: 3000, PrivatePort: 3000}] }
         ];
 
+        // Services (realistic TrueNAS services)
         this.data.services = [
             { id: 1, service: 'ssh', state: 'RUNNING', enable: true, pid: 1234 },
-            { id: 2, service: 'docker', state: 'RUNNING', enable: true, pid: 5678 }
+            { id: 2, service: 'docker', state: 'RUNNING', enable: true, pid: 5678 },
+            { id: 3, service: 'smb', state: 'RUNNING', enable: true, pid: 9012 },
+            { id: 4, service: 'nfs', state: 'RUNNING', enable: true, pid: 3456 },
+            { id: 5, service: 'rsync', state: 'RUNNING', enable: true, pid: 7890 },
+            { id: 6, service: 'ftp', state: 'STOPPED', enable: false, pid: 0 },
+            { id: 7, service: 'cifs', state: 'RUNNING', enable: true, pid: 2345 },
+            { id: 8, service: 'dns', state: 'RUNNING', enable: true, pid: 6789 }
         ];
 
         this.data.mode = 'demo';
+    }
+
+    _genHistory(base, count, min, max) {
+        const hist = [];
+        let val = base;
+        for (let i = 0; i < count; i++) {
+            val += (Math.random() - 0.5) * 4;
+            val = Math.max(min, Math.min(max, val));
+            hist.push(Math.round(val));
+        }
+        return hist;
     }
 
     // ---- Helpers ----

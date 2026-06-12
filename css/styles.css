@@ -154,6 +154,51 @@ body {
     font-family: var(--font-mono);
 }
 
+/* ---- Live Data Toggle ---- */
+.live-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.25rem 0.5rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    transition: all var(--transition);
+}
+.live-switch:hover { border-color: var(--text-dim); }
+.live-switch input { display: none; }
+.live-switch-slider {
+    width: 28px;
+    height: 16px;
+    background: var(--border);
+    border-radius: 8px;
+    position: relative;
+    transition: background var(--transition);
+}
+.live-switch-slider::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: var(--text);
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform var(--transition);
+}
+.live-switch input:checked + .live-switch-slider { background: var(--success); }
+.live-switch input:checked + .live-switch-slider::after { transform: translateX(12px); }
+.live-switch-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.live-switch input:checked ~ .live-switch-label { color: var(--success); }
+
 /* ---- Buttons ---- */
 .btn {
     display: inline-flex;

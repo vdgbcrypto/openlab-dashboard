@@ -116,6 +116,29 @@ class Dashboard {
     }
 
     setupControls() {
+        // Live data toggle
+        const liveToggle = document.getElementById('liveToggle');
+        if (liveToggle) {
+            // Set initial state: checked = live mode, unchecked = demo mode
+            liveToggle.checked = this.data.mode === 'live' || this.data.mode === 'demo';
+            // When no backends configured, default to demo (unchecked)
+            if (!this.config.netdataUrl && !this.config.truenasUrl) {
+                liveToggle.checked = false;
+            }
+            liveToggle.addEventListener('change', () => {
+                if (liveToggle.checked) {
+                    // Switch to live mode
+                    this.data.mode = 'live';
+                    this.statusDemo = false;
+                } else {
+                    // Switch to demo mode
+                    this.statusDemo = true;
+                    this.generateDemoData();
+                }
+                this.refresh();
+            });
+        }
+
         document.getElementById('refreshBtn').addEventListener('click', () => this.refresh());
 
         const intervalSel = document.getElementById('refreshIntervalSelect');
@@ -198,26 +221,34 @@ class Dashboard {
 
     async refresh() {
         try {
-            const promises = [];
-
-            if (this.config.netdataUrl) {
-                promises.push(this.fetchNetdata());
-            }
-
-            if (this.config.truenasUrl && this.config.truenasPass) {
-                promises.push(this.fetchTrueNAS());
-            }
-
-            await Promise.allSettled(promises);
-
-            // Fall back to demo mode if no live data
-            if (this.data.cpu.percent === 0 && this.data.memory.total === 0) {
+            // If demo mode is forced, skip API calls
+            if (this.statusDemo) {
                 this.generateDemoData();
+            } else {
+                const promises = [];
+
+                if (this.config.netdataUrl) {
+                    promises.push(this.fetchNetdata());
+                }
+
+                if (this.config.truenasUrl && this.config.truenasPass) {
+                    promises.push(this.fetchTrueNAS());
+                }
+
+                await Promise.allSettled(promises);
+
+                // Fall back to demo mode if no live data received
+                if (this.data.cpu.percent === 0 && this.data.memory.total === 0) {
+                    this.generateDemoData();
+                }
             }
 
             const hasLive = this.config.netdataUrl || (this.config.truenasUrl && this.config.truenasPass);
             const statusEl = document.getElementById('connectionStatus');
-            if (hasLive) {
+            if (this.statusDemo) {
+                statusEl.className = 'connection-status offline';
+                statusEl.querySelector('.status-text').textContent = 'Demo mode';
+            } else if (hasLive) {
                 statusEl.className = 'connection-status online';
                 statusEl.querySelector('.status-text').textContent = 'Live';
             } else {

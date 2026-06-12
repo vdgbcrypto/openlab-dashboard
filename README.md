@@ -16,6 +16,18 @@ A self-hosted, single-page monitoring dashboard for homelab infrastructure. Conn
 - **Demo mode** — works out of the box with simulated data, no setup needed
 - **Responsive** — works on desktop and mobile
 
+## Live Data Toggle
+
+A toggle switch in the header bar lets you switch between **Live** mode (fetch data from configured Netdata/TrueNAS APIs) and **Demo** mode (realistic randomized simulated data).
+
+| Toggle Position | Behavior |
+|---|---|
+| Off (default) | Demo mode — generates realistic random data |
+| On | Live mode — fetches from configured APIs |
+| On (no APIs) | Falls back to demo mode gracefully |
+
+All settings persist via `localStorage`.
+
 ## Screenshots
 
 | Light Mode | Dark Mode |

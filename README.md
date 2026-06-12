@@ -113,6 +113,10 @@ openlab-dashboard/
 │   └── dashboard.js    # All logic (Netdata, TrueNAS, rendering)
 ├── assets/             # Screenshots for README
 ├── config.example.json # Example configuration
+├── .github/            # Issue templates and PR template
+│   └── ISSUE_TEMPLATE/
+│       ├── bug_report.md
+│       └── feature_request.md
 ├── LICENSE             # MIT
 └── README.md           # This file
 ```

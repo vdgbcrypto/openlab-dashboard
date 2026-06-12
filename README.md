@@ -13,7 +13,8 @@ A self-hosted, single-page monitoring dashboard for homelab infrastructure. Conn
 - **Auto-refresh** (5s / 10s / 30s / 60s / off)
 - **Config modal** — enter your Netdata/TrueNAS/ntopng URLs, click Save, done
 - **Service detection** — auto-detects which backends are reachable
-- **Demo mode** — works out of the box with simulated data, no setup needed
+- **Live data toggle** — switch between live API data and demo mode with one click
+- **Demo mode** — works out of the box with realistic simulated data, no setup needed
 - **Responsive** — works on desktop and mobile
 
 ## Live Data Toggle
@@ -22,9 +23,9 @@ A toggle switch in the header bar lets you switch between **Live** mode (fetch d
 
 | Toggle Position | Behavior |
 |---|---|
-| Off (default) | Demo mode — generates realistic random data |
-| On | Live mode — fetches from configured APIs |
-| On (no APIs) | Falls back to demo mode gracefully |
+| Off (default) | Demo mode — generates realistic random data on each refresh |
+| On | Live mode — fetches from configured APIs in real time |
+| On (no APIs configured) | Gracefully falls back to demo mode |
 
 All settings persist via `localStorage`.
 
@@ -114,9 +115,10 @@ openlab-dashboard/
 ├── assets/             # Screenshots for README
 ├── config.example.json # Example configuration
 ├── .github/            # Issue templates and PR template
-│   └── ISSUE_TEMPLATE/
-│       ├── bug_report.md
-│       └── feature_request.md
+│   ├── ISSUE_TEMPLATE/
+│   │   ├── bug_report.md
+│   │   └── feature_request.md
+│   └── pull_request_template.md
 ├── LICENSE             # MIT
 └── README.md           # This file
 ```

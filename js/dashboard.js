@@ -32,7 +32,7 @@ class Dashboard {
         this.setupTheme();
         this.setupConfig();
         // Load demo mode immediately, refresh will try APIs if configured
-        if (!this.config.netdataUrl && !this.config.truenasUrl) {
+        if (!this.config.netdataEnabled && !this.config.truenasEnabled) {
             this.generateDemoData();
             this.data.mode = 'demo';
         }
@@ -42,17 +42,31 @@ class Dashboard {
     }
 
     // ---- Config ----
+    // Proxy paths — all traffic goes through the same-origin proxy to avoid CORS
+    PROXY_NETDATA = '/proxy/netdata';
+    PROXY_TRUENAS = '/proxy/truenas';
+    PROXY_NTOPNG = '/proxy/ntopng';
+
     loadConfig() {
         const defaults = {
-            truenasUrl: '',
+            netdataEnabled: true,
+            ntopngEnabled: false,
+            truenasEnabled: true,
             truenasUser: 'root',
             truenasPass: '',
+            // Legacy URL fields (kept for backward compat)
+            truenasUrl: '',
             ntopngUrl: '',
             netdataUrl: ''
         };
         try {
             const saved = localStorage.getItem('olDashboardConfig');
-            return saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+            const config = saved ? { ...defaults, ...JSON.parse(saved) } : defaults;
+            // Migration: if old URL fields are set, set the new enabled flags
+            if (config.netdataUrl && !config.netdataEnabled) config.netdataEnabled = true;
+            if (config.ntopngUrl && !config.ntopngEnabled) config.ntopngEnabled = true;
+            if (config.truenasUrl && !config.truenasEnabled) config.truenasEnabled = true;
+            return config;
         } catch {
             return defaults;
         }
@@ -95,10 +109,11 @@ class Dashboard {
         // Config modal
         document.getElementById('configBtn').addEventListener('click', () => {
             document.getElementById('configModal').style.display = 'flex';
-            document.getElementById('truenasUrl').value = this.config.truenasUrl;
+            document.getElementById('netdataEnabled').checked = this.config.netdataEnabled;
+            document.getElementById('ntopngEnabled').checked = this.config.ntopngEnabled;
+            document.getElementById('truenasEnabled').checked = this.config.truenasEnabled;
             document.getElementById('truenasUser').value = this.config.truenasUser;
-            document.getElementById('ntopngUrl').value = this.config.ntopngUrl;
-            document.getElementById('netdataUrl').value = this.config.netdataUrl;
+            document.getElementById('truenasPass').value = this.config.truenasPass;
         });
         document.getElementById('closeConfigBtn').addEventListener('click', () => {
             document.getElementById('configModal').style.display = 'none';
@@ -122,7 +137,7 @@ class Dashboard {
             // Set initial state: checked = live mode, unchecked = demo mode
             liveToggle.checked = this.data.mode === 'live' || this.data.mode === 'demo';
             // When no backends configured, default to demo (unchecked)
-            if (!this.config.netdataUrl && !this.config.truenasUrl) {
+            if (!this.config.netdataEnabled && !this.config.truenasEnabled) {
                 liveToggle.checked = false;
             }
             liveToggle.addEventListener('change', () => {
@@ -151,14 +166,14 @@ class Dashboard {
 
         document.getElementById('saveConfigBtn').addEventListener('click', () => {
             this.saveConfig({
-                truenasUrl: document.getElementById('truenasUrl').value.trim(),
+                netdataEnabled: document.getElementById('netdataEnabled').checked,
+                ntopngEnabled: document.getElementById('ntopngEnabled').checked,
+                truenasEnabled: document.getElementById('truenasEnabled').checked,
                 truenasUser: document.getElementById('truenasUser').value.trim(),
-                truenasPass: document.getElementById('truenasPass').value.trim(),
-                ntopngUrl: document.getElementById('ntopngUrl').value.trim(),
-                netdataUrl: document.getElementById('netdataUrl').value.trim()
+                truenasPass: document.getElementById('truenasPass').value.trim()
             });
             document.getElementById('configModal').style.display = 'none';
-            this.data.mode = this.config.netdataUrl || this.config.truenasUrl ? 'live' : 'demo';
+            this.data.mode = (this.config.netdataEnabled || this.config.truenasEnabled) ? 'live' : 'demo';
             this.detectServices();
             this.refresh();
         });
@@ -173,24 +188,24 @@ class Dashboard {
             el.className = 'detect-status ' + (status ? 'ok' : 'fail');
         };
 
-        if (this.config.netdataUrl) {
-            this.fetchSafe(this.config.netdataUrl + '/api/v1/info', 3000)
+        if (this.config.netdataEnabled) {
+            this.fetchSafe(this.PROXY_NETDATA + '/api/v1/info', 3000)
                 .then(r => { setDetect('detectNetdata', r.ok); })
                 .catch(() => setDetect('detectNetdata', false));
         } else {
             setDetect('detectNetdata', false);
         }
 
-        if (this.config.ntopngUrl) {
-            this.fetchSafe(this.config.ntopngUrl, 3000)
+        if (this.config.ntopngEnabled) {
+            this.fetchSafe(this.PROXY_NTOPNG + '/', 3000)
                 .then(r => setDetect('detectNtopng', r.ok))
                 .catch(() => setDetect('detectNtopng', false));
         } else {
             setDetect('detectNtopng', false);
         }
 
-        if (this.config.truenasUrl) {
-            this.fetchSafe(this.config.truenasUrl + '/api/v2.0/system/info', 3000)
+        if (this.config.truenasEnabled) {
+            this.fetchSafe(this.PROXY_TRUENAS + '/', 3000)
                 .then(r => setDetect('detectTruenas', r.ok))
                 .catch(() => setDetect('detectTruenas', false));
         } else {
@@ -204,6 +219,23 @@ class Dashboard {
         const tid = setTimeout(() => controller.abort(), timeout);
         try {
             const resp = await fetch(url, { signal: controller.signal, mode: 'cors' });
+            clearTimeout(tid);
+            return { ok: resp.ok, data: await resp.json().catch(() => null) };
+        } catch (e) {
+            clearTimeout(tid);
+            throw e;
+        }
+    }
+
+    async fetchSafeWithAuth(url, timeout = 5000, authHeader) {
+        const controller = new AbortController();
+        const tid = setTimeout(() => controller.abort(), timeout);
+        try {
+            const resp = await fetch(url, {
+                signal: controller.signal,
+                mode: 'cors',
+                headers: { 'Authorization': authHeader }
+            });
             clearTimeout(tid);
             return { ok: resp.ok, data: await resp.json().catch(() => null) };
         } catch (e) {
@@ -227,11 +259,11 @@ class Dashboard {
             } else {
                 const promises = [];
 
-                if (this.config.netdataUrl) {
+                if (this.config.netdataEnabled) {
                     promises.push(this.fetchNetdata());
                 }
 
-                if (this.config.truenasUrl && this.config.truenasPass) {
+                if (this.config.truenasEnabled && this.config.truenasPass) {
                     promises.push(this.fetchTrueNAS());
                 }
 
@@ -243,7 +275,7 @@ class Dashboard {
                 }
             }
 
-            const hasLive = this.config.netdataUrl || (this.config.truenasUrl && this.config.truenasPass);
+            const hasLive = this.config.netdataEnabled || (this.config.truenasEnabled && this.config.truenasPass);
             const statusEl = document.getElementById('connectionStatus');
             if (this.statusDemo) {
                 statusEl.className = 'connection-status offline';
@@ -267,7 +299,7 @@ class Dashboard {
 
     // ---- Netdata API ----
     async fetchNetdata() {
-        const base = this.config.netdataUrl;
+        const base = this.PROXY_NETDATA;
 
         // CPU
         const res = await this.fetchSafe(base + '/api/v1/data?chart=system.cpu&after=-60&points=60', 6000);
@@ -340,12 +372,17 @@ class Dashboard {
 
     // ---- TrueNAS API ----
     async fetchTrueNAS() {
-        const base = this.config.truenasUrl.replace(/\/$/, '');
+        const base = this.PROXY_TRUENAS;
         const auth = 'Basic ' + btoa(this.config.truenasUser + ':' + this.config.truenasPass);
         const headers = { 'Authorization': auth };
 
+        // Helper to add auth header via fetchSafe
+        const fetchAuth = (url, timeout) => {
+            return this.fetchSafeWithAuth(url, timeout, auth);
+        };
+
         try {
-            const res = await this.fetchSafe(base + '/api/v2.0/system/info', 8000);
+            const res = await fetchAuth(base + '/api/v2.0/system/info', 8000);
             if (res.ok && res.data) {
                 this.data.system.hostname = res.data.hostname;
                 this.data.system.version = res.data.version;
@@ -357,7 +394,7 @@ class Dashboard {
         } catch {}
 
         try {
-            const res = await this.fetchSafe(base + '/api/v2.0/pool/dataset', 8000);
+            const res = await fetchAuth(base + '/api/v2.0/pool/dataset', 8000);
             if (res.ok && res.data) {
                 this.data.storage = res.data.map(ds => ({
                     name: ds.name,
@@ -370,7 +407,7 @@ class Dashboard {
         } catch {}
 
         try {
-            const res = await this.fetchSafe(base + '/api/v2.0/vm', 8000);
+            const res = await fetchAuth(base + '/api/v2.0/vm', 8000);
             if (res.ok && res.data) {
                 this.data.vms = res.data.map(vm => ({
                     id: vm.id,
@@ -384,7 +421,7 @@ class Dashboard {
         } catch {}
 
         try {
-            const res = await this.fetchSafe(base + '/api/v2.0/service', 8000);
+            const res = await fetchAuth(base + '/api/v2.0/service', 8000);
             if (res.ok && res.data) {
                 this.data.services = res.data.map(svc => ({
                     id: svc.id,

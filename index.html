@@ -1,294 +1,947 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OpenLab Dashboard</title>
-    <link rel="stylesheet" href="css/styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenLab Dashboard — ラボ</title>
+<style>
+/* ===== CSS RESET & BASE ===== */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+/* ===== THEME VARIABLES ===== */
+:root {
+  --bg-primary: #0a0a1a;
+  --bg-secondary: #12122a;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-card-hover: rgba(255,255,255,0.08);
+  --text-primary: #e0e0ff;
+  --text-secondary: #8888aa;
+  --accent: #ff6b9d;
+  --accent2: #c084fc;
+  --accent3: #60a5fa;
+  --border: rgba(255,255,255,0.08);
+  --glow: 0 0 20px rgba(255,107,157,0.3);
+  --font-main: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-jp: 'Noto Sans JP', 'Yu Gothic', sans-serif;
+  --card-radius: 16px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== ANIME THEME ===== */
+[data-theme="anime"] {
+  --bg-primary: #1a0a2e;
+  --bg-secondary: #2d1b4e;
+  --bg-card: rgba(255,107,157,0.06);
+  --bg-card-hover: rgba(255,107,157,0.15);
+  --text-primary: #ffe0f0;
+  --text-secondary: #c084fc;
+  --accent: #ff6b9d;
+  --accent2: #ffd700;
+  --accent3: #7b68ee;
+  --border: rgba(255,107,157,0.2);
+  --glow: 0 0 30px rgba(255,107,157,0.4), 0 0 60px rgba(192,132,252,0.2);
+  --font-main: 'Segoe UI', 'Noto Sans JP', system-ui, sans-serif;
+  --card-radius: 20px;
+  --anime-gradient: linear-gradient(135deg, #ff6b9d, #c084fc, #60a5fa);
+}
+
+/* ===== MANGA THEME ===== */
+[data-theme="manga"] {
+  --bg-primary: #f5f0e8;
+  --bg-secondary: #ebe5d8;
+  --bg-card: rgba(0,0,0,0.03);
+  --bg-card-hover: rgba(0,0,0,0.08);
+  --text-primary: #1a1a1a;
+  --text-secondary: #555555;
+  --accent: #e63946;
+  --accent2: #1d3557;
+  --accent3: #457b9d;
+  --border: rgba(0,0,0,0.12);
+  --glow: none;
+  --font-main: 'Noto Serif JP', 'Georgia', 'Times New Roman', serif;
+  --card-radius: 2px;
+}
+
+/* ===== AI FUTURISTIC THEME ===== */
+[data-theme="futuristic"] {
+  --bg-primary: #000810;
+  --bg-secondary: #001020;
+  --bg-card: rgba(0,255,200,0.03);
+  --bg-card-hover: rgba(0,255,200,0.08);
+  --text-primary: #00ffc8;
+  --text-secondary: #008866;
+  --accent: #00ffc8;
+  --accent2: #ff0066;
+  --accent3: #00aaff;
+  --border: rgba(0,255,200,0.15);
+  --glow: 0 0 20px rgba(0,255,200,0.3), 0 0 40px rgba(0,255,200,0.1);
+  --font-main: 'Courier New', 'Fira Code', monospace;
+  --card-radius: 4px;
+}
+
+/* ===== GLOBAL STYLES ===== */
+body {
+  font-family: var(--font-main);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  transition: var(--transition);
+  overflow-x: hidden;
+}
+
+/* ===== ANIME VIDEO BACKGROUND ===== */
+#anime-bg-video {
+  transition: opacity 0.5s ease;
+}
+[data-theme="anime"] #anime-bg-video {
+  opacity: 0.35;
+}
+[data-theme="manga"] #anime-bg-video,
+[data-theme="futuristic"] #anime-bg-video {
+  display: none;
+}
+
+/* ===== ANIME BACKGROUND EFFECTS ===== */
+[data-theme="anime"] body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(255,107,157,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(192,132,252,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(96,165,250,0.06) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== MANGA BACKGROUND ===== */
+[data-theme="manga"] body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.01) 2px, rgba(0,0,0,0.01) 4px),
+    repeating-linear-gradient(90deg, transparent, transparent 2px, rgba(0,0,0,0.01) 2px, rgba(0,0,0,0.01) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== FUTURISTIC BACKGROUND ===== */
+[data-theme="futuristic"] body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    linear-gradient(rgba(0,255,200,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,255,200,0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== SCANLINE OVERLAY (futuristic) ===== */
+[data-theme="futuristic"] body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ===== HEADER ===== */
+.header {
+  text-align: center;
+  padding: 40px 20px 30px;
+  position: relative;
+}
+
+.header h1 {
+  font-size: 2.8em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  background: var(--anime-gradient, linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3)));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  margin-bottom: 8px;
+}
+
+[data-theme="manga"] .header h1 {
+  background: none;
+  -webkit-text-fill-color: var(--text-primary);
+  text-shadow: 3px 3px 0 var(--accent);
+  font-weight: 900;
+  letter-spacing: 4px;
+}
+
+[data-theme="futuristic"] .header h1 {
+  background: none;
+  -webkit-text-fill-color: var(--accent);
+  text-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent), 0 0 40px rgba(0,255,200,0.3);
+  font-weight: 300;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+}
+
+.header .subtitle {
+  font-size: 1em;
+  color: var(--text-secondary);
+  letter-spacing: 1px;
+}
+
+[data-theme="futuristic"] .header .subtitle {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+}
+
+/* ===== THEME SWITCHER ===== */
+.theme-switcher {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 20px 0 30px;
+  flex-wrap: wrap;
+}
+
+.theme-btn {
+  padding: 10px 24px;
+  border: 2px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-size: 0.95em;
+  cursor: pointer;
+  transition: var(--transition);
+  border-radius: var(--card-radius);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-btn:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+}
+
+.theme-btn.active {
+  border-color: var(--accent);
+  box-shadow: var(--glow);
+  background: var(--bg-card-hover);
+}
+
+[data-theme="anime"] .theme-btn.active {
+  background: linear-gradient(135deg, rgba(255,107,157,0.2), rgba(192,132,252,0.2));
+}
+
+[data-theme="manga"] .theme-btn {
+  border: 3px solid var(--text-primary);
+  border-radius: 0;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+[data-theme="manga"] .theme-btn.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+}
+
+[data-theme="futuristic"] .theme-btn {
+  border: 1px solid var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8em;
+}
+
+[data-theme="futuristic"] .theme-btn.active {
+  background: rgba(0,255,200,0.1);
+  box-shadow: inset 0 0 20px rgba(0,255,200,0.1), 0 0 10px rgba(0,255,200,0.2);
+}
+
+/* ===== GRID LAYOUT ===== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+  padding: 10px 0;
+}
+
+/* ===== SERVICE CARDS ===== */
+.service-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.service-card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--glow);
+  border-color: var(--accent);
+}
+
+[data-theme="anime"] .service-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+[data-theme="anime"] .service-card:hover::before {
+  opacity: 1;
+}
+
+[data-theme="manga"] .service-card {
+  border: 3px solid var(--text-primary);
+  box-shadow: 5px 5px 0 var(--text-primary);
+  border-radius: 0;
+}
+
+[data-theme="manga"] .service-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--text-primary);
+}
+
+[data-theme="futuristic"] .service-card {
+  border: 1px solid rgba(0,255,200,0.15);
+  position: relative;
+}
+
+[data-theme="futuristic"] .service-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, rgba(0,255,200,0.02), transparent);
+  pointer-events: none;
+}
+
+[data-theme="futuristic"] .service-card:hover {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 30px rgba(0,255,200,0.05), 0 0 15px rgba(0,255,200,0.15);
+}
+
+/* ===== CARD ICON ===== */
+.card-icon {
+  font-size: 2.5em;
+  margin-bottom: 12px;
+  display: block;
+}
+
+[data-theme="anime"] .card-icon {
+  filter: drop-shadow(0 0 8px rgba(255,107,157,0.5));
+}
+
+[data-theme="futuristic"] .card-icon {
+  text-shadow: 0 0 10px var(--accent);
+}
+
+/* ===== CARD TITLE ===== */
+.card-title {
+  font-size: 1.3em;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+[data-theme="manga"] .card-title {
+  font-size: 1.4em;
+  letter-spacing: 1px;
+}
+
+/* ===== CARD DESCRIPTION ===== */
+.card-desc {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+/* ===== CARD PORT ===== */
+.card-port {
+  display: inline-block;
+  font-size: 0.75em;
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  margin-bottom: 12px;
+}
+
+[data-theme="manga"] .card-port {
+  border: 2px solid var(--text-primary);
+  border-radius: 0;
+  background: transparent;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+[data-theme="futuristic"] .card-port {
+  border: 1px solid rgba(0,255,200,0.3);
+  background: rgba(0,255,200,0.05);
+  font-family: 'Courier New', monospace;
+}
+
+/* ===== STATUS INDICATOR ===== */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34,197,94,0.5);
+  animation: pulse 2s infinite;
+}
+
+.status-dot.offline {
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239,68,68,0.5);
+  animation: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-text {
+  font-size: 0.8em;
+  color: var(--text-secondary);
+}
+
+/* ===== VM SECTION ===== */
+.section-title {
+  grid-column: 1 / -1;
+  font-size: 1.5em;
+  font-weight: 700;
+  margin: 30px 0 10px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+[data-theme="manga"] .section-title {
+  border-bottom: 4px solid var(--text-primary);
+  font-family: 'Noto Serif JP', serif;
+}
+
+[data-theme="futuristic"] .section-title {
+  border-bottom: 1px solid var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font-weight: 300;
+}
+
+/* ===== VM CARD ===== */
+.vm-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 24px;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.vm-card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-4px);
+  box-shadow: var(--glow);
+  border-color: var(--accent);
+}
+
+[data-theme="manga"] .vm-card {
+  border: 3px solid var(--text-primary);
+  box-shadow: 5px 5px 0 var(--text-primary);
+  border-radius: 0;
+}
+
+[data-theme="manga"] .vm-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 7px 7px 0 var(--text-primary);
+}
+
+.vm-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.vm-icon {
+  font-size: 2em;
+}
+
+.vm-name {
+  font-size: 1.2em;
+  font-weight: 700;
+}
+
+.vm-specs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.spec-item {
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+.spec-item strong {
+  color: var(--text-primary);
+}
+
+.vm-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.vm-service-tag {
+  font-size: 0.7em;
+  padding: 3px 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-secondary);
+}
+
+[data-theme="manga"] .vm-service-tag {
+  border: 2px solid var(--text-primary);
+  border-radius: 0;
+  background: transparent;
+  font-weight: 700;
+}
+
+[data-theme="futuristic"] .vm-service-tag {
+  border: 1px solid rgba(0,255,200,0.2);
+  background: rgba(0,255,200,0.03);
+  font-family: 'Courier New', monospace;
+}
+
+/* ===== FOOTER ===== */
+.footer {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 0.85em;
+}
+
+[data-theme="futuristic"] .footer {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+/* ===== FLOATING PARTICLES (anime) ===== */
+[data-theme="anime"] .particle {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.3;
+  animation: float 15s infinite ease-in-out;
+  z-index: 0;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+  25% { transform: translateY(-100px) translateX(50px); opacity: 0.6; }
+  50% { transform: translateY(-50px) translateX(-30px); opacity: 0.2; }
+  75% { transform: translateY(-150px) translateX(20px); opacity: 0.5; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .header h1 { font-size: 2em; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .theme-switcher { gap: 8px; }
+  .theme-btn { padding: 8px 16px; font-size: 0.85em; }
+}
+
+/* ===== GLITCH EFFECT (futuristic title) ===== */
+[data-theme="futuristic"] .glitch {
+  position: relative;
+}
+
+[data-theme="futuristic"] .glitch::before,
+[data-theme="futuristic"] .glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+}
+
+[data-theme="futuristic"] .glitch::before {
+  color: var(--accent2);
+  animation: glitch1 3s infinite;
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+}
+
+[data-theme="futuristic"] .glitch::after {
+  color: var(--accent3);
+  animation: glitch2 3s infinite;
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+}
+
+@keyframes glitch1 {
+  0%, 95%, 100% { transform: translate(0); }
+  96% { transform: translate(-2px, 1px); }
+  97% { transform: translate(2px, -1px); }
+}
+
+@keyframes glitch2 {
+  0%, 95%, 100% { transform: translate(0); }
+  96% { transform: translate(2px, -1px); }
+  97% { transform: translate(-2px, 1px); }
+}
+
+/* ===== TOOLTIP ===== */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.75em;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+</style>
 </head>
-<body>
-    <div id="app">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <div class="logo">
-                    <span class="logo-icon">&#9679;</span>
-                    <h1>OpenLab Dashboard</h1>
-                </div>
-            </div>
-            <div class="header-controls">
-                <span class="connection-status" id="connectionStatus">
-                    <span class="status-dot"></span>
-                    <span class="status-text">Connecting...</span>
-                </span>
-                <label class="live-switch" title="Toggle live data / demo mode" aria-label="Toggle live data">
-                    <input type="checkbox" id="liveToggle" checked>
-                    <span class="live-switch-slider"></span>
-                    <span class="live-switch-label">Live</span>
-                </label>
-                <span class="last-updated" id="lastUpdated">--</span>
-                <button id="themeToggle" class="btn btn-icon" title="Toggle theme" aria-label="Toggle light/dark theme">
-                    <span class="icon-sun">&#9728;</span>
-                    <span class="icon-moon">&#9790;</span>
-                </button>
-                <button id="refreshBtn" class="btn btn-icon" title="Refresh now" aria-label="Refresh data">
-                    &#8635;
-                </button>
-                <button id="configBtn" class="btn btn-secondary">&#9881; Config</button>
-            </div>
-        </header>
+<body data-theme="anime">
 
-        <div class="main-layout">
-            <!-- Sidebar Navigation -->
-            <nav class="sidebar" id="sidebar">
-                <ul class="nav-list">
-                    <li class="nav-item active" data-section="overview">
-                        <span class="nav-icon">&#9673;</span> Overview
-                    </li>
-                    <li class="nav-item" data-section="resources">
-                        <span class="nav-icon">&#9681;</span> Resources
-                    </li>
-                    <li class="nav-item" data-section="storage">
-                        <span class="nav-icon">&#128190;</span> Storage
-                    </li>
-                    <li class="nav-item" data-section="network">
-                        <span class="nav-icon">&#127760;</span> Network
-                    </li>
-                    <li class="nav-item" data-section="vms">
-                        <span class="nav-icon">&#128421;</span> VMs
-                    </li>
-                    <li class="nav-item" data-section="containers">
-                        <span class="nav-icon">&#128230;</span> Containers
-                    </li>
-                    <li class="nav-item" data-section="apps">
-                        <span class="nav-icon">&#128640;</span> Apps
-                    </li>
-                    <li class="nav-item" data-section="services">
-                        <span class="nav-icon">&#9881;</span> Services
-                    </li>
-                </ul>
-                <div class="sidebar-footer">
-                    <div class="refresh-interval">
-                        <label for="refreshIntervalSelect">Refresh:</label>
-                        <select id="refreshIntervalSelect">
-                            <option value="5" selected>5s</option>
-                            <option value="10">10s</option>
-                            <option value="30">30s</option>
-                            <option value="60">60s</option>
-                            <option value="0">Off</option>
-                        </select>
-                    </div>
-                </div>
-            </nav>
+<!-- Anime video background -->
+<video autoplay muted loop playsinline id="anime-bg-video" style="position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:0.35;pointer-events:none;filter:blur(1px) saturate(1.2);">
+  <source src="/static/miku-error-live-wallpaper.mp4" type="video/mp4">
+</video>
 
-            <!-- Main Content -->
-            <main class="dashboard" id="dashboardContent">
+<!-- Floating particles for anime theme -->
+<div id="particles"></div>
 
-                <!-- Overview Section -->
-                <section class="section" id="section-overview">
-                    <div class="section-cards">
-                        <div class="stat-card" id="statSystem">
-                            <div class="stat-header">System</div>
-                            <div class="stat-body">
-                                <div class="stat-row"><span class="stat-label">Hostname</span><span class="stat-value" id="sysHostname">--</span></div>
-                                <div class="stat-row"><span class="stat-label">Version</span><span class="stat-value" id="sysVersion">--</span></div>
-                                <div class="stat-row"><span class="stat-label">Uptime</span><span class="stat-value" id="sysUptime">--</span></div>
-                                <div class="stat-row"><span class="stat-label">Load</span><span class="stat-value" id="sysLoad">--</span></div>
-                            </div>
-                        </div>
+<div class="container">
+  <!-- HEADER -->
+  <header class="header">
+    <h1>OpenLab Dashboard</h1>
+    <p class="subtitle" id="subtitle">みんなのホームラボ — Welcome to the Lab</p>
+  </header>
 
-                        <div class="stat-card" id="statCpu">
-                            <div class="stat-header">CPU</div>
-                            <div class="stat-body">
-                                <div class="big-stat">
-                                    <span class="big-stat-value" id="cpuPercent">0%</span>
-                                    <span class="big-stat-label">Utilization</span>
-                                </div>
-                                <div class="mini-chart"><canvas id="cpuChart" height="60"></canvas></div>
-                                <div class="stat-row"><span class="stat-label">Cores</span><span class="stat-value" id="cpuCores">--</span></div>
-                                <div class="stat-row"><span class="stat-label">Temp</span><span class="stat-value" id="cpuTemp">--</span></div>
-                            </div>
-                        </div>
+  <!-- THEME SWITCHER -->
+  <div class="theme-switcher">
+    <button class="theme-btn active" onclick="setTheme('anime')" id="btn-anime">
+      🌸 Anime
+    </button>
+    <button class="theme-btn" onclick="setTheme('manga')" id="btn-manga">
+      📖 Manga
+    </button>
+    <button class="theme-btn" onclick="setTheme('futuristic')" id="btn-futuristic">
+      🤖 AI Futuristic
+    </button>
+  </div>
 
-                        <div class="stat-card" id="statMemory">
-                            <div class="stat-header">Memory</div>
-                            <div class="stat-body">
-                                <div class="big-stat">
-                                    <span class="big-stat-value" id="memPercent">0%</span>
-                                    <span class="big-stat-label">Used</span>
-                                </div>
-                                <div class="mini-chart"><canvas id="memChart" height="60"></canvas></div>
-                                <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="memUsed">--</span></div>
-                                <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="memTotal">--</span></div>
-                            </div>
-                        </div>
+  <!-- DASHBOARD GRID -->
+  <div class="dashboard-grid">
 
-                        <div class="stat-card" id="statDisk">
-                            <div class="stat-header">Disk</div>
-                            <div class="stat-body">
-                                <div class="big-stat">
-                                    <span class="big-stat-value" id="diskPercent">0%</span>
-                                    <span class="big-stat-label">Used</span>
-                                </div>
-                                <div class="mini-chart"><canvas id="diskChart" height="60"></canvas></div>
-                                <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="diskUsed">--</span></div>
-                                <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="diskTotal">--</span></div>
-                            </div>
-                        </div>
+    <!-- VM SECTION -->
+    <div class="section-title" id="vm-section">🖥️ Virtual Machines</div>
 
-                        <div class="stat-card wide" id="statNetwork">
-                            <div class="stat-header">Network Traffic</div>
-                            <div class="stat-body">
-                                <div class="network-stats">
-                                    <div class="net-stat">
-                                        <span class="net-arrow">&#8595;</span>
-                                        <span class="net-value" id="netRx">--</span>
-                                        <span class="net-label">RX</span>
-                                    </div>
-                                    <div class="net-stat">
-                                        <span class="net-arrow">&#8593;</span>
-                                        <span class="net-value" id="netTx">--</span>
-                                        <span class="net-label">TX</span>
-                                    </div>
-                                </div>
-                                <div class="mini-chart wide"><canvas id="netChart" height="60"></canvas></div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Resources Detail Section -->
-                <section class="section hidden" id="section-resources">
-                    <h2 class="section-title">Resource Details</h2>
-                    <div class="resource-detail">
-                        <div class="detail-panel">
-                            <h3>CPU History (last 60s)</h3>
-                            <canvas id="cpuHistoryChart" height="150"></canvas>
-                            <div class="cpu-info" id="cpuInfo"></div>
-                        </div>
-                        <div class="detail-panel">
-                            <h3>Memory History (last 60s)</h3>
-                            <canvas id="memHistoryChart" height="150"></canvas>
-                            <div class="mem-info" id="memInfo"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Storage Section -->
-                <section class="section hidden" id="section-storage">
-                    <h2 class="section-title">Storage Pools</h2>
-                    <div class="storage-grid" id="storageGrid"></div>
-                </section>
-
-                <!-- Network Section -->
-                <section class="section hidden" id="section-network">
-                    <h2 class="section-title">Network</h2>
-                    <div class="network-detail" id="networkDetail">
-                        <div class="detail-panel">
-                            <h3>Traffic History (last 60s)</h3>
-                            <canvas id="netHistoryChart" height="150"></canvas>
-                        </div>
-                        <div class="detail-panel">
-                            <h3>Interface Statistics</h3>
-                            <div class="interface-list" id="interfaceList"></div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- VMs Section -->
-                <section class="section hidden" id="section-vms">
-                    <h2 class="section-title">Virtual Machines <span class="count-badge" id="vmCount">0</span></h2>
-                    <div class="list-container" id="vmList"></div>
-                </section>
-
-                <!-- Containers Section -->
-                <section class="section hidden" id="section-containers">
-                    <h2 class="section-title">Containers <span class="count-badge" id="containerCount">0</span></h2>
-                    <div class="list-container" id="containerList"></div>
-                </section>
-
-                <!-- Apps Section -->
-                <section class="section hidden" id="section-apps">
-                    <h2 class="section-title">Applications <span class="count-badge" id="appCount">0</span></h2>
-                    <div class="list-container" id="appList"></div>
-                </section>
-
-                <!-- Services Section -->
-                <section class="section hidden" id="section-services">
-                    <h2 class="section-title">System Services <span class="count-badge" id="serviceCount">0</span></h2>
-                    <div class="list-container" id="serviceList"></div>
-                </section>
-            </main>
+    <!-- VM Card: Docker Worker -->
+    <div class="vm-card" onclick="window.open('http://100.81.76.106:9443', '_blank')">
+      <div class="vm-header">
+        <span class="vm-icon">🐳</span>
+        <div>
+          <div class="vm-name">Docker Worker</div>
+          <div style="font-size:0.8em;color:var(--text-secondary)">192.168.1.83 / 100.81.76.106</div>
         </div>
-
-        <!-- Config Modal -->
-        <div id="configModal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Configuration</h2>
-                    <button class="close-btn" aria-label="Close">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="config-section">
-                        <h3>API Connections</h3>
-                        <form id="configForm">
-                            <div class="form-group">
-                                <label for="netdataUrl">Netdata URL</label>
-                                <input type="url" id="netdataUrl" placeholder="http://localhost:19999">
-                            </div>
-                            <div class="form-group">
-                                <label for="ntopngUrl">ntopng URL (optional)</label>
-                                <input type="url" id="ntopngUrl" placeholder="http://localhost:3000">
-                            </div>
-                            <div class="form-group">
-                                <label for="truenasUrl">TrueNAS URL (optional)</label>
-                                <input type="url" id="truenasUrl" placeholder="https://truenas.local">
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="truenasUser">Username</label>
-                                    <input type="text" id="truenasUser" placeholder="root">
-                                </div>
-                                <div class="form-group">
-                                    <label for="truenasPass">API Key</label>
-                                    <input type="password" id="truenasPass" placeholder="API Key">
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="config-section">
-                        <h3>Detected Services</h3>
-                        <div class="detection-results" id="detectionResults">
-                            <div class="detect-item"><span class="detect-label">Netdata:</span><span class="detect-status" id="detectNetdata">Checking...</span></div>
-                            <div class="detect-item"><span class="detect-label">ntopng:</span><span class="detect-status" id="detectNtopng">Checking...</span></div>
-                            <div class="detect-item"><span class="detect-label">TrueNAS:</span><span class="detect-status" id="detectTruenas">Checking...</span></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="saveConfigBtn" class="btn btn-primary">Save &amp; Connect</button>
-                    <button id="closeConfigBtn" class="btn btn-secondary">Cancel</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Detail Modal -->
-        <div id="detailModal" class="modal" style="display: none;">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h2 id="detailTitle">Details</h2>
-                    <button class="close-btn" aria-label="Close">&times;</button>
-                </div>
-                <div class="modal-body" id="detailBody">
-                    <p class="loading">Loading...</p>
-                </div>
-                <div class="modal-footer">
-                    <button id="closeDetailBtn" class="btn btn-secondary">Close</button>
-                </div>
-            </div>
-        </div>
+      </div>
+      <div class="vm-specs">
+        <div class="spec-item"><strong>CPU:</strong> 16 vCPUs</div>
+        <div class="spec-item"><strong>RAM:</strong> 7.2 GB</div>
+        <div class="spec-item"><strong>OS:</strong> Debian 13</div>
+        <div class="spec-item"><strong>Storage:</strong> 147 GB</div>
+      </div>
+      <div class="vm-services">
+        <span class="vm-service-tag">ntopng</span>
+        <span class="vm-service-tag">AdGuard</span>
+        <span class="vm-service-tag">Netdata</span>
+        <span class="vm-service-tag">Syncthing</span>
+        <span class="vm-service-tag">Vaultwarden</span>
+        <span class="vm-service-tag">Portainer</span>
+      </div>
+      <div class="status-row">
+        <div class="status-dot" id="vm-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
     </div>
 
-    <script src="js/dashboard.js"></script>
+    <!-- HOST SECTION -->
+    <div class="section-title" id="host-section">🏠 Host & Infrastructure</div>
+
+    <!-- TrueNAS SCALE -->
+    <a href="#" class="service-card" onclick="window.open('http://192.168.1.252', '_blank')">
+      <span class="card-icon">💾</span>
+      <div class="card-title">TrueNAS SCALE</div>
+      <div class="card-desc">Primary NAS & hypervisor. ZFS storage, Docker management, VM hosting.</div>
+      <span class="card-port">:80</span>
+      <div class="status-row">
+        <div class="status-dot" id="truenas-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- OpenLab Dashboard -->
+    <a href="#" class="service-card" onclick="window.open('http://192.168.1.252:8899', '_blank')">
+      <span class="card-icon">📊</span>
+      <div class="card-title">OpenLab Dashboard</div>
+      <div class="card-desc">This dashboard! Central hub for all homelab services and monitoring.</div>
+      <span class="card-port">:8899</span>
+      <div class="status-row">
+        <div class="status-dot"></div>
+        <span class="status-text">Online</span>
+      </div>
+    </a>
+
+    <!-- NETWORK SECTION -->
+    <div class="section-section" id="network-section">🌐 Network & Monitoring</div>
+
+    <!-- ntopng -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:3000', '_blank')">
+      <span class="card-icon">📡</span>
+      <div class="card-title">ntopng</div>
+      <div class="card-desc">Network traffic analysis & flow monitoring. Deep packet inspection.</div>
+      <span class="card-port">:3000</span>
+      <div class="status-row">
+        <div class="status-dot" id="ntopng-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- Netdata -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:19999', '_blank')">
+      <span class="card-icon">📈</span>
+      <div class="card-title">Netdata</div>
+      <div class="card-desc">Real-time system metrics, CPU, memory, disk, network monitoring.</div>
+      <span class="card-port">:19999</span>
+      <div class="status-row">
+        <div class="status-dot" id="netdata-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- AdGuard -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:8090', '_blank')">
+      <span class="card-icon">🛡️</span>
+      <div class="card-title">AdGuard Home</div>
+      <div class="card-desc">Network-wide ad blocking & DNS filtering. Privacy protection.</div>
+      <span class="card-port">:8090</span>
+      <div class="status-row">
+        <div class="status-dot" id="adguard-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- SERVICES SECTION -->
+    <div class="section-title" id="services-section">⚙️ Services</div>
+
+    <!-- Portainer -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:9443', '_blank')">
+      <span class="card-icon">🐋</span>
+      <div class="card-title">Portainer</div>
+      <div class="card-desc">Docker container management. Deploy, monitor, and manage containers.</div>
+      <span class="card-port">:9443</span>
+      <div class="status-row">
+        <div class="status-dot" id="portainer-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- Vaultwarden -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:8080', '_blank')">
+      <span class="card-icon">🔐</span>
+      <div class="card-title">Vaultwarden</div>
+      <div class="card-desc">Self-hosted password manager. Bitwarden-compatible server.</div>
+      <span class="card-port">:8080</span>
+      <div class="status-row">
+        <div class="status-dot" id="vaultwarden-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- Syncthing -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:8384', '_blank')">
+      <span class="card-icon">🔄</span>
+      <div class="card-title">Syncthing</div>
+      <div class="card-desc">Continuous file synchronization. P2P sync across all devices.</div>
+      <span class="card-port">:8384</span>
+      <div class="status-row">
+        <div class="status-dot" id="syncthing-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+    <!-- CRYPTO SECTION -->
+    <div class="section-title" id="crypto-section">💰 Crypto & Trading</div>
+
+    <!-- Crypto Bot Dashboard -->
+    <a href="#" class="service-card" onclick="window.open('http://100.81.76.106:8001', '_blank')">
+      <span class="card-icon">🤖</span>
+      <div class="card-title">Crypto Trading Bot</div>
+      <div class="card-desc">DOGE/USDT automated trading. RSI + Bollinger Bands + EMA + MACD strategy.</div>
+      <span class="card-port">:8001</span>
+      <div class="status-row">
+        <div class="status-dot" id="crypto-status"></div>
+        <span class="status-text">Checking...</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <p>🦉 OpenLab Dashboard — Built with ❤️ by Hoot</p>
+    <p style="margin-top:6px">© 2026 vdgbcrypto · <a href="https://github.com/vdgbcrypto/openlab-dashboard" style="color:var(--accent);text-decoration:none" target="_blank">GitHub</a></p>
+  </footer>
+</div>
+
+<script>
+// ===== THEME SWITCHER =====
+function setTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('openlab-theme', theme);
+
+  // Update button states
+  document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+  document.getElementById('btn-' + theme).classList.add('active');
+
+  // Update subtitle
+  const subtitles = {
+    anime: 'みんなのホームラボ — Welcome to the Lab',
+    manga: 'ホームラボ — Welcome to the Lab',
+    futuristic: '[ HOMELAB CONTROL INTERFACE ]'
+  };
+  document.getElementById('subtitle').textContent = subtitles[theme];
+
+  // Toggle particles
+  updateParticles(theme);
+}
+
+// Load saved theme
+const savedTheme = localStorage.getItem('openlab-theme') || 'anime';
+setTheme(savedTheme);
+
+// ===== FLOATING PARTICLES (anime theme) =====
+function updateParticles(theme) {
+  const container = document.getElementById('particles');
+  container.innerHTML = '';
+  if (theme !== 'anime') return;
+
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 15 + 's';
+    p.style.animationDuration = (10 + Math.random() * 10) + 's';
+    const colors = ['#ff6b9d', '#c084fc', '#60a5fa', '#ffd700'];
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.width = (2 + Math.random() * 4) + 'px';
+    p.style.height = p.style.width;
+    container.appendChild(p);
+  }
+}
+
+// ===== SERVICE STATUS CHECK =====
+const services = [
+  { id: 'ntopng-status', url: 'http://100.81.76.106:3000/' },
+  { id: 'netdata-status', url: 'http://100.81.76.106:19999/api/v1/info' },
+  { id: 'adguard-status', url: 'http://100.81.76.106:8090/' },
+  { id: 'portainer-status', url: 'http://100.81.76.106:9443/api/status' },
+  { id: 'vaultwarden-status', url: 'http://100.81.76.106:8080/' },
+  { id: 'syncthing-status', url: 'http://100.81.76.106:8384/' },
+  { id: 'crypto-status', url: '/proxy/crypto/' },
+  { id: 'truenas-status', url: '/proxy/truenas/' },
+  { id: 'vm-status', url: 'http://100.81.76.106:9443/' },
+];
+
+async function checkService(svc) {
+  const dot = document.getElementById(svc.id);
+  if (!dot) return;
+  const text = dot.parentElement.querySelector('.status-text');
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 4000);
+    const res = await fetch(svc.url, { signal: ctrl.signal, mode: 'no-cors' });
+    clearTimeout(tid);
+    dot.classList.remove('offline');
+    text.textContent = 'Online';
+  } catch (e) {
+    dot.classList.add('offline');
+    text.textContent = 'Offline';
+  }
+}
+
+// Check all services
+services.forEach(checkService);
+// Re-check every 60s
+setInterval(() => services.forEach(checkService), 60000);
+
+// ===== CARD CLICK: navigate to service =====
+document.querySelectorAll('.service-card').forEach(card => {
+  card.addEventListener('click', function(e) {
+    e.preventDefault();
+    const href = this.getAttribute('href');
+    if (href && href !== '#') window.open(href, '_blank');
+  });
+});
+</script>
 </body>
 </html>

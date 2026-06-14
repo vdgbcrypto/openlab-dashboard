@@ -1,7 +1,7 @@
 {
-    "netdataUrl": "http://localhost:19999",
-    "ntopngUrl": "http://localhost:3000",
-    "truenasUrl": "https://truenas.local",
+    "netdataEnabled": true,
+    "ntopngEnabled": false,
+    "truenasEnabled": true,
     "truenasUser": "root",
     "truenasPass": "YOUR_API_KEY_HERE"
 }

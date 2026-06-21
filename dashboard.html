@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenLab Dashboard — Monitoring</title>
+<link rel="stylesheet" href="/css/styles.css">
+<style>
+/* Dashboard-specific overrides for anime/manga/futuristic themes */
+[data-theme="anime"] {
+  --primary: #ff6b9d;
+  --primary-hover: #e55a8a;
+  --primary-glow: rgba(255,107,157,0.15);
+  --bg: #1a0a2e;
+  --bg-elevated: #2d1b4e;
+  --bg-card: rgba(255,107,157,0.06);
+  --bg-sidebar: #150825;
+  --bg-hover: rgba(255,107,157,0.1);
+  --border: rgba(255,107,157,0.2);
+  --border-subtle: rgba(255,107,157,0.1);
+  --text: #ffe0f0;
+  --text-secondary: #c084fc;
+  --text-muted: #a060d0;
+  --text-dim: #7040a0;
+}
+
+[data-theme="manga"] {
+  --primary: #e63946;
+  --primary-hover: #c5303c;
+  --primary-glow: rgba(230,57,70,0.1);
+  --bg: #f5f0e8;
+  --bg-elevated: #ffffff;
+  --bg-card: #ffffff;
+  --bg-sidebar: #e8ecf1;
+  --bg-hover: rgba(0,0,0,0.05);
+  --border: #1a1a1a;
+  --border-subtle: rgba(0,0,0,0.15);
+  --text: #1a1a1a;
+  --text-secondary: #555555;
+  --text-muted: #666666;
+  --text-dim: #999999;
+}
+
+[data-theme="futuristic"] {
+  --primary: #00ffc8;
+  --primary-hover: #00ddaa;
+  --primary-glow: rgba(0,255,200,0.1);
+  --bg: #000810;
+  --bg-elevated: #001020;
+  --bg-card: rgba(0,255,200,0.03);
+  --bg-sidebar: #000c18;
+  --bg-hover: rgba(0,255,200,0.05);
+  --border: rgba(0,255,200,0.15);
+  --border-subtle: rgba(0,255,200,0.08);
+  --text: #00ffc8;
+  --text-secondary: #00aa88;
+  --text-muted: #008866;
+  --text-dim: #005544;
+}
+
+/* Back button */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  font-size: 0.8em;
+  color: var(--text-muted);
+  text-decoration: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  transition: all 0.2s;
+  margin-right: 10px;
+}
+.back-link:hover {
+  color: var(--text);
+  border-color: var(--text-dim);
+  background: var(--bg-hover);
+}
+
+/* Scanline for futuristic */
+[data-theme="futuristic"] body::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Manga sidebar */
+[data-theme="manga"] .sidebar {
+  border-right: 3px solid var(--text);
+}
+
+[data-theme="manga"] .nav-item {
+  border-left: 4px solid transparent;
+  font-weight: 600;
+}
+[data-theme="manga"] .nav-item.active {
+  border-left-color: var(--primary);
+  background: rgba(230,57,70,0.08);
+}
+
+/* Anime card glow */
+[data-theme="anime"] .stat-card:hover,
+[data-theme="anime"] .storage-card:hover,
+[data-theme="anime"] .detail-panel:hover {
+  box-shadow: 0 0 20px rgba(255,107,157,0.15);
+}
+
+/* Config modal theme support */
+[data-theme="anime"] .modal-content {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+}
+[data-theme="manga"] .modal-content {
+  background: var(--bg-elevated);
+  border: 3px solid var(--text);
+  border-radius: 0;
+}
+[data-theme="futuristic"] .modal-content {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(0,255,200,0.1);
+}
+
+/* Config modal inputs */
+.modal-content input[type="text"],
+.modal-content input[type="password"] {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.85em;
+  width: 100%;
+  box-sizing: border-box;
+}
+.modal-content input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+.modal-content label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85em;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.modal-content h3 {
+  color: var(--text);
+  margin-bottom: 12px;
+}
+</style>
+</head>
+<body data-theme="dark">
+
+<div id="app">
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <a href="/" class="back-link">← Home</a>
+      <div class="logo">
+        <span class="logo-icon">📊</span>
+        <h1>OpenLab Dashboard</h1>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="connection-status" id="connectionStatus">
+        <div class="status-dot"></div>
+        <span class="status-text">Connecting...</span>
+      </div>
+      <span class="last-updated" id="lastUpdated">--:--:--</span>
+      <label class="live-switch">
+        <input type="checkbox" id="liveToggle">
+        <span class="live-switch-slider"></span>
+        <span class="live-switch-label">Live</span>
+      </label>
+      <button class="btn btn-icon" id="themeToggle" title="Toggle theme">🌙</button>
+      <button class="btn btn-icon" id="configBtn" title="Settings">⚙️</button>
+      <button class="btn btn-icon" id="refreshBtn" title="Refresh">🔄</button>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <ul class="nav-list">
+        <li class="nav-item active" data-section="overview"><span class="nav-icon">📊</span> Overview</li>
+        <li class="nav-item" data-section="cpu"><span class="nav-icon">🧠</span> CPU</li>
+        <li class="nav-item" data-section="memory"><span class="nav-icon">💾</span> Memory</li>
+        <li class="nav-item" data-section="storage"><span class="nav-icon">🗄️</span> Storage</li>
+        <li class="nav-item" data-section="network"><span class="nav-icon">🌐</span> Network</li>
+        <li class="nav-item" data-section="vms"><span class="nav-icon">🖥️</span> VMs</li>
+        <li class="nav-item" data-section="containers"><span class="nav-icon">📦</span> Containers</li>
+        <li class="nav-item" data-section="services"><span class="nav-icon">⚙️</span> Services</li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="refresh-interval">
+          <span>Refresh:</span>
+          <select id="refreshIntervalSelect">
+            <option value="0">Manual</option>
+            <option value="2">2s</option>
+            <option value="5" selected>5s</option>
+            <option value="10">10s</option>
+            <option value="30">30s</option>
+          </select>
+        </div>
+      </div>
+    </nav>
+
+    <!-- DASHBOARD CONTENT -->
+    <main class="dashboard">
+
+      <!-- OVERVIEW SECTION -->
+      <div class="section" id="section-overview">
+        <div class="section-title">System Overview</div>
+        <div class="section-cards">
+          <div class="stat-card">
+            <div class="stat-header">Hostname</div>
+            <div class="stat-body">
+              <div class="big-stat"><div class="big-stat-value" id="sysHostname">--</div></div>
+              <div class="stat-row"><span class="stat-label">Version</span><span class="stat-value" id="sysVersion">--</span></div>
+              <div class="stat-row"><span class="stat-label">Uptime</span><span class="stat-value" id="sysUptime">--</span></div>
+              <div class="stat-row"><span class="stat-label">Load</span><span class="stat-value" id="sysLoad">--</span></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">CPU</div>
+            <div class="stat-body">
+              <div class="big-stat"><div class="big-stat-value" id="cpuPercent">--</div></div>
+              <div class="stat-row"><span class="stat-label">Cores</span><span class="stat-value" id="cpuCores">--</span></div>
+              <div class="stat-row"><span class="stat-label">Temp</span><span class="stat-value" id="cpuTemp">--</span></div>
+              <div class="mini-chart"><canvas id="cpuChart" height="60"></canvas></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">Memory</div>
+            <div class="stat-body">
+              <div class="big-stat"><div class="big-stat-value" id="memPercent">--</div></div>
+              <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="memUsed">--</span></div>
+              <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="memTotal">--</span></div>
+              <div class="mini-chart"><canvas id="memChart" height="60"></canvas></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">Disk</div>
+            <div class="stat-body">
+              <div class="big-stat"><div class="big-stat-value" id="diskPercent">--</div></div>
+              <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="diskUsed">--</span></div>
+              <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="diskTotal">--</span></div>
+              <div class="mini-chart"><canvas id="diskChart" height="60"></canvas></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header">Network</div>
+            <div class="stat-body">
+              <div class="network-stats">
+                <div class="net-stat"><span class="net-arrow">↓</span><span class="net-value" id="netRx">--</span><span class="net-label">RX</span></div>
+                <div class="net-stat"><span class="net-arrow">↑</span><span class="net-value" id="netTx">--</span><span class="net-label">TX</span></div>
+              </div>
+              <div class="mini-chart"><canvas id="netChart" height="60"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CPU SECTION -->
+      <div class="section hidden" id="section-cpu">
+        <div class="section-title">CPU Details</div>
+        <div class="resource-detail">
+          <div class="detail-panel">
+            <h3>CPU Usage History</h3>
+            <canvas id="cpuDetailChart" height="200"></canvas>
+            <div class="cpu-info">Cores: <span id="cpuCoresDetail">--</span> · Temp: <span id="cpuTempDetail">--</span></div>
+          </div>
+          <div class="detail-panel">
+            <h3>System Load</h3>
+            <div class="big-stat"><div class="big-stat-value" id="sysLoadDetail">--</div></div>
+            <div class="cpu-info">Uptime: <span id="sysUptimeDetail">--</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MEMORY SECTION -->
+      <div class="section hidden" id="section-memory">
+        <div class="section-title">Memory Details</div>
+        <div class="resource-detail">
+          <div class="detail-panel">
+            <h3>Memory Usage History</h3>
+            <canvas id="memDetailChart" height="200"></canvas>
+          </div>
+          <div class="detail-panel">
+            <h3>Memory Summary</h3>
+            <div class="stat-row"><span class="stat-label">Used</span><span class="stat-value" id="memUsedDetail">--</span></div>
+            <div class="stat-row"><span class="stat-label">Total</span><span class="stat-value" id="memTotalDetail">--</span></div>
+            <div class="stat-row"><span class="stat-label">Usage</span><span class="stat-value" id="memPctDetail">--</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STORAGE SECTION -->
+      <div class="section hidden" id="section-storage">
+        <div class="section-title">Storage Pools</div>
+        <div class="storage-grid" id="storageGrid"></div>
+      </div>
+
+      <!-- NETWORK SECTION -->
+      <div class="section hidden" id="section-network">
+        <div class="section-title">Network Details</div>
+        <div class="resource-detail">
+          <div class="detail-panel">
+            <h3>RX History</h3>
+            <canvas id="netRxChart" height="200"></canvas>
+          </div>
+          <div class="detail-panel">
+            <h3>TX History</h3>
+            <canvas id="netTxChart" height="200"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- VMs SECTION -->
+      <div class="section hidden" id="section-vms">
+        <div class="section-title">Virtual Machines <span class="count-badge" id="vmCount">0</span></div>
+        <div class="list-container" id="vmList"></div>
+      </div>
+
+      <!-- CONTAINERS SECTION -->
+      <div class="section hidden" id="section-containers">
+        <div class="section-title">Docker Containers <span class="count-badge" id="containerCount">0</span></div>
+        <div class="list-container" id="containerList"></div>
+      </div>
+
+      <!-- SERVICES SECTION -->
+      <div class="section hidden" id="section-services">
+        <div class="section-title">Services <span class="count-badge" id="serviceCount">0</span></div>
+        <div class="list-container" id="serviceList"></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="configModal" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>⚙️ Dashboard Settings</h3>
+      <button class="close-btn" onclick="document.getElementById('configModal').style.display='none'">✕</button>
+    </div>
+    <label><input type="checkbox" id="netdataEnabled"> Enable Netdata</label>
+    <label><input type="checkbox" id="ntopngEnabled"> Enable ntopng</label>
+    <label><input type="checkbox" id="truenasEnabled"> Enable TrueNAS</label>
+    <label>TrueNAS User: <input type="text" id="truenasUser" value="root"></label>
+    <label>TrueNAS Pass: <input type="password" id="truenasPass"></label>
+    <button class="btn btn-primary" id="saveConfigBtn" style="margin-top:12px">Save</button>
+    <div style="margin-top:12px;font-size:0.75em;color:var(--text-dim)">
+      Netdata: <span id="detectNetdata" class="detect-status">Checking...</span> ·
+      ntopng: <span id="detectNtopng" class="detect-status">Checking...</span> ·
+      TrueNAS: <span id="detectTruenas" class="detect-status">Checking...</span>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="modal-overlay" id="detailModal" style="display:none">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="detailTitle">Details</h3>
+      <button class="close-btn" onclick="document.getElementById('detailModal').style.display='none'">✕</button>
+    </div>
+    <div id="detailBody"></div>
+    <button class="btn" id="closeDetailBtn" style="margin-top:12px">Close</button>
+  </div>
+</div>
+
+<script src="/js/dashboard.js"></script>
+</body>
+</html>
